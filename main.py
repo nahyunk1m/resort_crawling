@@ -2,6 +2,7 @@ import os
 import time
 import json
 import enum
+from collections import OrderedDict
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -27,6 +28,8 @@ options.add_experimental_option("prefs", {
 
 
 class Resort:
+    resort_list = []
+
     def __init__(self, name):
         self.name = name
         self.accom = {}
@@ -37,79 +40,105 @@ class Resort:
     def __repr__(self):
         return f"{self.name}"
 
+    #TODO: 페이지 모두 설정
+    @classmethod
+    def crawling(cls):
+        try:
+            driver = webdriver.Chrome(options=options)
+        except:
+            pass
+        driver.implicitly_wait(5)
+        driver.get(MAINPAGE)
+        id_curs = driver.find_element_by_css_selector('#_id')
+        id_curs.click()
+        id_curs.send_keys(cls.get_account('ID'))
+        time.sleep(2)
+        password_curs = driver.find_element_by_css_selector('#_password')
+        password_curs.send_keys(cls.get_account('PW'))
+        time.sleep(1)
+        password_curs.send_keys(Keys.ENTER)
+        time.sleep(2)
 
-class Accomondation:
-    def __init__(self, name):
-        pass
+        driver.get(RESORTPAGE)
+        html = driver.page_source
 
+        soup = BeautifulSoup(html, 'html.parser')
 
-def get_account(info):
-    with open('secrets.json', 'r') as f:
-        data = json.loads(f.read())
-    return data[info]
-
-
-def remove_file(extension="xls"):
-    pass
-
-
-try:
-    driver = webdriver.Chrome(options=options)
-except:
-    pass
-
-
-driver.implicitly_wait(5)
-driver.get(MAINPAGE)
-id_curs = driver.find_element_by_css_selector('#_id')
-id_curs.click()
-id_curs.send_keys(get_account('ID'))
-time.sleep(2)
-password_curs = driver.find_element_by_css_selector('#_password')
-password_curs.send_keys(get_account('PW'))
-time.sleep(1)
-password_curs.send_keys(Keys.ENTER)
-time.sleep(2)
-
-driver.get(RESORTPAGE)
-html = driver.page_source
-# driver.find_element_by_xpath('//*[@id="contents"]/div[2]/a[2]').click()
-
-soup = BeautifulSoup(html, 'html.parser')
-
-resort_list = []
-for inner in soup.select('.room_state .inner'):
-    resort_name = inner.select_one('.first')
-    resort = Resort(resort_name.text)
+        for inner in soup.select('.room_state .inner'):
+            resort_name = inner.select_one('.first')
+            resort = cls(resort_name.text)
+            
+            # 숙소별로 구하기
+            for tbody in inner.select('table tbody'):
+                for tr_idx, tr in enumerate(tbody.select('tr')[1:]):
+                    if tr_idx == 0:
+                        accom_name = tr.select_one('th').text
+                        resort.accom[accom_name] = {}
+                    day = TodayDate
+                    for td_idx, td in enumerate(tr.select('td')):
+                        if td_idx == 0:
+                            accom_type = '/'.join(td.select_one('.r_name').text.strip().split())
+                            resort.accom[accom_name][accom_type] = OrderedDict()
+                        else:
+                            resort.accom[accom_name][accom_type][day.strftime('%Y-%m-%d')] = td.text.strip('\n\t ')
+                            day = day + timedelta(days=1)
+            cls.resort_list.append(resort)    
+        time.sleep(3)
+        driver.quit()
+        return cls.resort_list
     
-    # 숙소별로 구하기
-    for tbody in inner.select('table tbody'):
-        for tr_idx, tr in enumerate(tbody.select('tr')[1:]):
-            if tr_idx == 0:
-                accom_name = tr.select_one('th').text
-                resort.accom[accom_name] = {}
-            day = TodayDate
-            for td_idx, td in enumerate(tr.select('td')):
-                if td_idx == 0:
-                    accom_type = '/'.join(td.select_one('.r_name').text.strip().split())
-                    resort.accom[accom_name][accom_type] = {}
-                else:
-                    resort.accom[accom_name][accom_type][day.strftime('%Y-%m-%d')] = td.text.strip('\n\t ')
-                    day = day + timedelta(days=1)
-    resort_list.append(resort)
+    @staticmethod
+    def get_account(info):
+        with open('secrets.json', 'r') as f:
+            data = json.loads(f.read())
+        return data[info]
 
-print(resort_list)
-
-time.sleep(3)
-driver.quit()
-
-
-while True:
-    try:
-        choice = int(input('원하는 메뉴를 선택해주세요. 1. 조회  0. 종료'))
-    except ValueError:
-        print('숫자만 입력 가능합니다.')
-        continue
-
-    if choice == 1:
+    @staticmethod
+    def remove_file(extension="xls"):
         pass
+
+    @classmethod
+    def choice_resort(cls):
+        for num, i in enumerate(cls.resort_list, 1):
+            print(num, i)
+
+
+    def show(self, d="", indent=0):
+        if not isinstance(d, dict):
+            d = self.accom
+        for key, value in d.items():
+        # print('\t' * indent + str(key))
+            if indent == 2:
+                print(key, end='')
+            else:
+                print(key)
+            if isinstance(value, dict):
+                self.show(value, indent+1)
+            else:
+                print('\t' * (indent+1) + str(value))
+            
+
+def choice_list():
+    for num, i in enumerate(choice_list, 1):
+            print(num, i, end="\t")
+        print("0. 종료")
+        try:
+            choice = int(input(''))
+            if choice > len(choice_list):
+                raise Exception()
+        except:
+            print("정해진 범위와 숫자만 입력해주세요.")
+            continue
+        
+
+
+if __name__ == "__main__":
+    choice_list = ["조회"]
+    # resort = Resort.crawling()
+    while True:
+        choice_list()
+        if choice == 1:
+            Resort.choice_resort()
+
+
+
