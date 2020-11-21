@@ -29,6 +29,7 @@ options.add_experimental_option("prefs", {
 
 class Resort:
     resort_list = []
+    resort_number = 0
 
     def __init__(self, name):
         self.name = name
@@ -73,7 +74,7 @@ class Resort:
                 for tr_idx, tr in enumerate(tbody.select('tr')[1:]):
                     if tr_idx == 0:
                         accom_name = tr.select_one('th').text
-                        resort.accom[accom_name] = {}
+                        resort.accom[accom_name] = OrderedDict()
                     day = TodayDate
                     for td_idx, td in enumerate(tr.select('td')):
                         if td_idx == 0:
@@ -110,7 +111,8 @@ class Resort:
         for key, value in d.items():
         # print('\t' * indent + str(key))
             if indent == 2:
-                print(key, end='')
+                print(key, self.resort_number, end='')
+                self.resort_number += 1
             else:
                 print(key)
             if isinstance(value, dict):
@@ -146,6 +148,8 @@ if __name__ == "__main__":
         if choice == 1:
             resort = Resort.choice_resort() # 리조트 인스턴스 받기
             resort.show()
+            resort_number = int(input('조회하실 항목을 골라주세요.'))
+            print(resort_number)
 
         elif choice == 0:
             input("종료. 아무키나 눌러주세요.")
