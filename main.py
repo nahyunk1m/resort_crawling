@@ -99,8 +99,10 @@ class Resort:
 
     @classmethod
     def choice_resort(cls):
-        for num, i in enumerate(cls.resort_list, 1):
-            print(num, i)
+        cls.choice = choice_number(cls.resort_list, msg="조회하실 리조트를 골라주세요.")
+        if cls.choice == 0:
+            return
+        print(cls.resort_list[cls.choice-1])
 
 
     def show(self, d="", indent=0):
@@ -116,29 +118,37 @@ class Resort:
                 self.show(value, indent+1)
             else:
                 print('\t' * (indent+1) + str(value))
-            
 
-def choice_list():
-    for num, i in enumerate(choice_list, 1):
-            print(num, i, end="\t")
+
+def choice_number(choice_list, msg=""):
+    while True:
+        print(msg)
+        for num, i in enumerate(choice_list, 1):
+            print(f"{num}.{i}", end="\t")
         print("0. 종료")
         try:
             choice = int(input(''))
             if choice > len(choice_list):
-                raise Exception()
+                raise Exception()         
         except:
             print("정해진 범위와 숫자만 입력해주세요.")
             continue
-        
+        else:
+            return choice
 
 
 if __name__ == "__main__":
     choice_list = ["조회"]
-    # resort = Resort.crawling()
+    resort = Resort.crawling()
+    msg = "리조트 크롤링 프로그램입니다. 메뉴를 선택해주세요."
+
     while True:
-        choice_list()
+        choice = choice_number(choice_list, msg)
         if choice == 1:
             Resort.choice_resort()
 
+        elif choice == 0:
+            input("종료. 아무키나 눌러주세요.")
+            break
 
 
