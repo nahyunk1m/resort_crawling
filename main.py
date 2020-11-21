@@ -85,7 +85,6 @@ class Resort:
             cls.resort_list.append(resort)    
         time.sleep(3)
         driver.quit()
-        return cls.resort_list
     
     @staticmethod
     def get_account(info):
@@ -102,7 +101,7 @@ class Resort:
         cls.choice = choice_number(cls.resort_list, msg="조회하실 리조트를 골라주세요.")
         if cls.choice == 0:
             return
-        print(cls.resort_list[cls.choice-1])
+        return cls.resort_list[cls.choice-1]
 
 
     def show(self, d="", indent=0):
@@ -139,13 +138,14 @@ def choice_number(choice_list, msg=""):
 
 if __name__ == "__main__":
     choice_list = ["조회"]
-    resort = Resort.crawling()
+    Resort.crawling()
     msg = "리조트 크롤링 프로그램입니다. 메뉴를 선택해주세요."
 
     while True:
         choice = choice_number(choice_list, msg)
         if choice == 1:
-            Resort.choice_resort()
+            resort = Resort.choice_resort() # 리조트 인스턴스 받기
+            resort.show()
 
         elif choice == 0:
             input("종료. 아무키나 눌러주세요.")
