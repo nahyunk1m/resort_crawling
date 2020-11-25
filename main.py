@@ -30,6 +30,7 @@ options.add_experimental_option("prefs", {
 class Resort:
     resort_list = []
     resort_number = 0
+    html = ""
 
     def __init__(self, name):
         self.name = name
@@ -41,7 +42,6 @@ class Resort:
     def __repr__(self):
         return f"{self.name}"
 
-    #TODO: 페이지 모두 설정
     @classmethod
     def crawling(cls):
         try:
@@ -61,14 +61,14 @@ class Resort:
         time.sleep(2)
 
         driver.get(RESORTPAGE)
-        html = driver.page_source
+        cls.html = driver.page_source
 
-        soup = BeautifulSoup(html, 'html.parser')
+        soup = BeautifulSoup(cls.html, 'html.parser')
 
         for inner in soup.select('.room_state .inner'):
             resort_name = inner.select_one('.first')
             resort = cls(resort_name.text)
-            
+
             # 숙소별로 구하기
             for tbody in inner.select('table tbody'):
                 for tr_idx, tr in enumerate(tbody.select('tr')[1:]):
@@ -83,10 +83,10 @@ class Resort:
                         else:
                             resort.accom[accom_name][accom_type][day.strftime('%Y-%m-%d')] = td.text.strip('\n\t ')
                             day = day + timedelta(days=1)
-            cls.resort_list.append(resort)    
+            cls.resort_list.append(resort)
         time.sleep(3)
-        driver.quit()
-    
+        cls.driver = driver
+
     @staticmethod
     def get_account(info):
         with open('secrets.json', 'r') as f:
@@ -104,7 +104,6 @@ class Resort:
             return
         return cls.resort_list[cls.choice-1]
 
-
     def show(self, d="", indent=0):
         if not isinstance(d, dict):
             d = self.accom
@@ -120,6 +119,20 @@ class Resort:
             else:
                 print('\t' * (indent+1) + str(value))
 
+    def show_detail(self, number):
+        soup = BeautifulSoup(self.html, 'html.parser')
+        for inner in soup.select('.room_state .inner'):
+            if inner.select_one('h3.first').text != self.name:
+                 continue
+            for idx, div in enumerate(inner.select('td div')):
+                if idx == number:
+                    try:
+                        selector = div['onclick']
+                        break
+                    except:
+                        return "예약 불가입니다."
+        self.driver.find_element_by_css_selector(""".inner td div[onclick="{}"]""".format(selector)).click()
+
 
 def choice_number(choice_list, msg=""):
     while True:
@@ -130,7 +143,7 @@ def choice_number(choice_list, msg=""):
         try:
             choice = int(input(''))
             if choice > len(choice_list):
-                raise Exception()         
+                raise Exception()
         except:
             print("정해진 범위와 숫자만 입력해주세요.")
             continue
@@ -149,10 +162,8 @@ if __name__ == "__main__":
             resort = Resort.choice_resort() # 리조트 인스턴스 받기
             resort.show()
             resort_number = int(input('조회하실 항목을 골라주세요.'))
-            print(resort_number)
+            resort.show_detail(resort_number)
 
         elif choice == 0:
             input("종료. 아무키나 눌러주세요.")
             break
-
-
