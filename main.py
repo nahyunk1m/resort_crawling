@@ -131,6 +131,8 @@ class Resort:
                         break
                     except:
                         return "예약 불가입니다."
+        if self.driver.current_url != RESORTPAGE:
+            self.driver.back()
         self.driver.find_element_by_css_selector(""".inner td div[onclick="{}"]""".format(selector)).click()
 
 
