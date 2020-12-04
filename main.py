@@ -134,6 +134,8 @@ class Resort:
         if self.driver.current_url != RESORTPAGE:
             self.driver.back()
         self.driver.find_element_by_css_selector(""".inner td div[onclick="{}"]""".format(selector)).click()
+        time.sleep(3)
+        self.driver.find_element_by_xpath("""//*[@id="amtBtn"]/input""").click()
 
 
 def choice_number(choice_list, msg=""):
@@ -162,6 +164,7 @@ if __name__ == "__main__":
         choice = choice_number(choice_list, msg)
         if choice == 1:
             resort = Resort.choice_resort() # 리조트 인스턴스 받기
+            resort.resort_number = 0
             resort.show()
             resort_number = int(input('조회하실 항목을 골라주세요.'))
             resort.show_detail(resort_number)
